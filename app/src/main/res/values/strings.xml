@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">ArchitectureComponents</string>
+    <string name="navigation_view_header_title">Books</string>
+    <string name="list_title">Books List</string>
+    <string name="no_books_add">Add a book +</string>
+
+    <string name="successfully_saved_book_message">Book saved</string>
+    <string name="successfully_deleted_book_message">Book was deleted</string>
+    <string name="successfully_added_book_message">Book added</string>
+    <string name="logo">Logo</string>
+    <string name="empty_book_message">Book cannot be empty</string>
+    <string name="edit_book">Edit book</string>
+    <string name="add_book">New book</string>
+    <string name="title_hint">Title</string>
+    <string name="pages_hint">Number of pages</string>
+    <string name="book_marked_complete">Book marked complete</string>
+    <string name="menu_delete_book">Delete book</string>
+    <string name="no_data">No data</string>
+</resources>

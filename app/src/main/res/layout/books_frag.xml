@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <data>
+        <import type="android.view.View" />
+        <variable
+            name="viewmodel"
+            type="pl.rasztabiga.architecturecomponents.books.BooksViewModel" />
+    </data>
+
+<pl.rasztabiga.architecturecomponents.ScrollChildSwipeRefreshLayout
+    android:id="@+id/refresh_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:onRefresh="@{viewmodel}"
+    app:refreshing="@{viewmodel.dataLoading}">
+
+    <RelativeLayout
+        android:id="@+id/booksContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/booksLL"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="@{viewmodel.empty ? View.GONE : View.VISIBLE}">
+
+            <!--TODO Add RecyclerView-->
+            <ListView
+                android:id="@+id/books_list"
+                app:items="@{viewmodel.items}"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/noBooks"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:orientation="vertical"
+            android:visibility="@{viewmodel.empty ? View.VISIBLE : View.GONE}">
+
+            <TextView
+                android:id="@+id/noBooksAdd"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:background="@drawable/touch_feedback"
+                android:gravity="center"
+                android:text="@string/no_books_add"
+                android:onClick="@{() -> viewmodel.addNewBook()}" />
+
+        </LinearLayout>
+    </RelativeLayout>
+</pl.rasztabiga.architecturecomponents.ScrollChildSwipeRefreshLayout>
+</layout>
+

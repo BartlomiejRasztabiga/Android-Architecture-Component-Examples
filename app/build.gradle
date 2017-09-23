@@ -78,13 +78,17 @@ dependencies {
     })
 
     // Lifecycle, LiveData, and ViewModel
-    implementation "android.arch.lifecycle:runtime:$rootProject.archLifecycleVersion"
-    implementation "android.arch.lifecycle:extensions:$rootProject.archLifecycleVersion"
-    annotationProcessor "android.arch.lifecycle:compiler:$rootProject.archLifecycleVersion"
+    implementation "android.arch.lifecycle:runtime:1.0.0"
+    implementation "android.arch.lifecycle:extensions:1.0.0-beta1"
+    annotationProcessor "android.arch.lifecycle:compiler:1.0.0-beta1"
+
+    implementation "android.arch.lifecycle:common-java8:1.0.0-beta1"
+    //testImplementation "android.arch.core.core-testing:1.0.0-beta1"
 
     // Room
-    implementation "android.arch.persistence.room:runtime:$rootProject.archLifecycleVersion"
-    annotationProcessor "android.arch.persistence.room:compiler:$rootProject.archLifecycleVersion"
+    implementation "android.arch.persistence.room:runtime:1.0.0-beta1"
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0-beta1"
+    implementation "android.arch.persistence.room:rxjava2:1.0.0-beta1"
 
     // Support library
     implementation "com.android.support:appcompat-v7:$rootProject.supportLibraryVersion"

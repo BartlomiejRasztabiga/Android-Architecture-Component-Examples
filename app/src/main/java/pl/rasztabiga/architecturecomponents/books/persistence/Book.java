@@ -75,10 +75,11 @@ public final class Book {
         return pages;
     }
 
-    @NonNull
     public boolean isCompleted() {
         return completed;
     }
+
+    public boolean isActive() { return !isCompleted();}
 
     public void setCompleted(boolean completed) {
         this.completed = completed;

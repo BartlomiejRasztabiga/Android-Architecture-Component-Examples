@@ -13,16 +13,14 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import pl.rasztabiga.architecturecomponents.books.BooksRepository;
 import pl.rasztabiga.architecturecomponents.books.persistence.Book;
 import pl.rasztabiga.architecturecomponents.books.persistence.BooksDataSource;
 import pl.rasztabiga.architecturecomponents.books.persistence.BooksLocalDataSource;
 import pl.rasztabiga.architecturecomponents.books.persistence.BooksRemoteDataSource;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
@@ -39,8 +37,8 @@ public class BooksRepositoryTest {
     private static final long BOOK_ID1 = 1L;
     private static final long BOOK_ID2 = 2L;
 
-    private static List<Book> BOOKS = Lists.newArrayList(new Book(BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1),
-            new Book(BOOK_TITLE2, BOOK_NUMBER_OF_PAGES2));
+    private static List<Book> BOOKS = Lists.newArrayList(new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1),
+            new Book(BOOK_ID2, BOOK_TITLE2, BOOK_NUMBER_OF_PAGES2));
 
 
     private BooksRepository mBooksRepository;

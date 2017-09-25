@@ -58,7 +58,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> createBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 
     @Override
@@ -68,7 +68,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> updateBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 
     @Override

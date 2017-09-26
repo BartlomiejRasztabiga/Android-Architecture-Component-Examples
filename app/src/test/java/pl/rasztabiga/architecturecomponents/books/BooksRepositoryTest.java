@@ -195,6 +195,16 @@ public class BooksRepositoryTest {
     }
 
     @Test
+    public void getBooksWithLocalDataSourceAvailable_booksAreRetrievedFromLocal() {
+
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        setBooksAvailable(mBooksLocalDataSource, BOOKS);
+
+        verify(mLoadBooksCallback).onBooksLoaded(BOOKS);
+    }
+
+    @Test
     public void getBooksWithBothDataSourcesUnavailable_firesOnDataUnavailable(){
         mBooksRepository.getBooks(mLoadBooksCallback);
 
@@ -203,6 +213,57 @@ public class BooksRepositoryTest {
         setBooksNotAvailable(mBooksRemoteDataSource);
 
         verify(mLoadBooksCallback).onDataNotAvailable();
+    }
+
+    @Test
+    public void getBookWithAvailableCache_bookIsRetrievedOnlyFromCache() {
+        // First call to cache data
+        mBooksRepository.refreshBooks();
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
+
+        // Second call to verify cache availability
+        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
+
+        verify(mBooksLocalDataSource, never()).getBook(BOOK_ID1, mGetBookCallback);
+        verify(mBooksRemoteDataSource, never()).getBook(BOOK_ID1, mGetBookCallback);
+
+        verify(mGetBookCallback).onBookLoaded(BOOKS.get(0));
+    }
+
+    @Test
+    public void getBookWithLocalDataSourceAvailable_bookIsRetrievedFromLocal() {
+
+        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
+
+        setBookAvailable(mBooksLocalDataSource, BOOKS.get(0));
+
+        verify(mGetBookCallback).onBookLoaded(BOOKS.get(0));
+    }
+
+    @Test
+    public void getBookWithLocalDataSourceUnavailable_bookIsRetrievedFromRemote() {
+
+        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
+
+        setBookNotAvailable(mBooksLocalDataSource, BOOK_ID1);
+
+        setBookAvailable(mBooksRemoteDataSource, BOOKS.get(0));
+
+        verify(mGetBookCallback).onBookLoaded(BOOKS.get(0));
+    }
+
+    @Test
+    public void getBookWithLocalDataSourceUnavailableAndRemoteReturnsNull_firesOnDataUnavailable() {
+
+        mBooksRepository.getBook(0L, mGetBookCallback);
+
+        setBookNotAvailable(mBooksLocalDataSource, 0L);
+
+        setBookAvailable(mBooksRemoteDataSource, null);
+
+        verify(mGetBookCallback).onDataNotAvailable();
     }
 
 
@@ -274,7 +335,11 @@ public class BooksRepositoryTest {
         mBookCallbackCaptor.getValue().onDataNotAvailable();
     }
     private void setBookAvailable(BooksDataSource dataSource, Book book){
-        verify(dataSource).getBook(eq(book.getId()), mBookCallbackCaptor.capture());
+        if (book == null) {
+            verify(dataSource).getBook(eq(0L), mBookCallbackCaptor.capture());
+        } else {
+            verify(dataSource).getBook(eq(book.getId()), mBookCallbackCaptor.capture());
+        }
         mBookCallbackCaptor.getValue().onBookLoaded(book);
     }
 

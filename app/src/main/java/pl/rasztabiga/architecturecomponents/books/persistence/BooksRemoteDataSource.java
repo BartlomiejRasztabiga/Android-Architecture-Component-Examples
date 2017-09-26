@@ -48,7 +48,12 @@ public class BooksRemoteDataSource implements BooksDataSource {
 
     @Override
     public void getBook(@NonNull Long bookId, @NonNull GetBookCallback callback) {
-        throw new UnsupportedOperationException();
+        Call<Book> getBookCall = restApi.getBook(bookId);
+
+        Observable.fromCallable(() -> getBookCall.execute().body())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(callback::onBookLoaded, e -> callback.onDataNotAvailable());
     }
 
     @Override

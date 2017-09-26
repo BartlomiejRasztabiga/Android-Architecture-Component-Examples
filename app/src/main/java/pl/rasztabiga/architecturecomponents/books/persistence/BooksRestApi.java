@@ -15,6 +15,9 @@ public interface BooksRestApi {
     @GET("books/")
     Call<List<Book>> getBooks();
 
+    @GET("books/{id}")
+    Call<Book> getBook(@Path("id") Long bookId);
+
     @POST("books/")
     Call<Book> createBook(@Body Book book);
 

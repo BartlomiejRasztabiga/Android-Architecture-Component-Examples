@@ -182,8 +182,6 @@ public class BooksRepositoryTest {
         verify(mLoadBooksCallback).onBooksLoaded(BOOKS);
     }
 
-
-
     @Test
     public void getBooksWithLocalDataSourceUnavailable_booksAreRetrievedFromRemote(){
 
@@ -236,12 +234,13 @@ public class BooksRepositoryTest {
     }
     @Test
     public void updateBook_updatesCachedBook(){
-        Book newBook = new Book(0L, "Book1", 100L);
+        Book newBook = new Book(1L, "Book1", 100L);
 
         mBooksRepository.updateBook(newBook);
 
         verify(mBooksLocalDataSource).updateBook(newBook);
         verify(mBooksRemoteDataSource).updateBook(newBook);
+
         assertThat(mBooksRepository.mCachedBooks.size()).isEqualTo(1);
     }
 
@@ -275,7 +274,7 @@ public class BooksRepositoryTest {
         mBookCallbackCaptor.getValue().onDataNotAvailable();
     }
     private void setBookAvailable(BooksDataSource dataSource, Book book){
-        verify(dataSource).getBook(book.getId(), mBookCallbackCaptor.capture());
+        verify(dataSource).getBook(eq(book.getId()), mBookCallbackCaptor.capture());
         mBookCallbackCaptor.getValue().onBookLoaded(book);
     }
 

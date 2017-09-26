@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class BooksRepositoryTest {
@@ -181,6 +182,69 @@ public class BooksRepositoryTest {
         verify(mLoadBooksCallback).onBooksLoaded(BOOKS);
     }
 
+
+
+    @Test
+    public void getBooksWithLocalDataSourceUnavailable_booksAreRetrievedFromRemote(){
+
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        setBooksNotAvailable(mBooksLocalDataSource);
+
+        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
+
+        verify(mLoadBooksCallback).onBooksLoaded(BOOKS);
+    }
+
+    @Test
+    public void getBooksWithBothDataSourcesUnavailable_firesOnDataUnavailable(){
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        setBooksNotAvailable(mBooksLocalDataSource);
+
+        setBooksNotAvailable(mBooksRemoteDataSource);
+
+        verify(mLoadBooksCallback).onDataNotAvailable();
+    }
+
+
+    @Test
+    public void getBookWithBothDataSourcesUnavailable_firesOnDataUnavailable(){
+        final long bookId = 123L;
+
+        mBooksRepository.getBook(bookId, mGetBookCallback);
+
+        setBookNotAvailable(mBooksLocalDataSource, bookId);
+
+        setBookNotAvailable(mBooksRemoteDataSource, bookId);
+
+        verify(mGetBookCallback).onDataNotAvailable();
+    }
+
+
+    @Test
+    public void getBooks_refreshesLocalDataSource(){
+
+        mBooksRepository.refreshBooks();
+
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
+
+        verify(mBooksLocalDataSource, times(BOOKS.size())).saveBook(any(Book.class));
+
+    }
+    @Test
+    public void updateBook_updatesCachedBook(){
+        Book newBook = new Book(0L, "Book1", 100L);
+
+        mBooksRepository.updateBook(newBook);
+
+        verify(mBooksLocalDataSource).updateBook(newBook);
+        verify(mBooksRemoteDataSource).updateBook(newBook);
+        assertThat(mBooksRepository.mCachedBooks.size()).isEqualTo(1);
+    }
+
     private void twoBooksLoadCallsToRepository(BooksDataSource.LoadBooksCallback callback) {
 
         mBooksRepository.getBooks(callback);
@@ -196,9 +260,23 @@ public class BooksRepositoryTest {
         mBooksRepository.getBooks(callback);
     }
 
+    private void setBooksNotAvailable(BooksDataSource booksDataSource){
+        verify(booksDataSource).getBooks(mBooksCallbackCaptor.capture());
+        mBooksCallbackCaptor.getValue().onDataNotAvailable();
+    }
+
     private void setBooksAvailable(BooksDataSource dataSource, List<Book> books){
         verify(dataSource).getBooks(mBooksCallbackCaptor.capture());
         mBooksCallbackCaptor.getValue().onBooksLoaded(books);
+    }
+
+    private void setBookNotAvailable(BooksDataSource dataSource, long bookId){
+        verify(dataSource).getBook(eq(bookId), mBookCallbackCaptor.capture());
+        mBookCallbackCaptor.getValue().onDataNotAvailable();
+    }
+    private void setBookAvailable(BooksDataSource dataSource, Book book){
+        verify(dataSource).getBook(book.getId(), mBookCallbackCaptor.capture());
+        mBookCallbackCaptor.getValue().onBookLoaded(book);
     }
 
 }

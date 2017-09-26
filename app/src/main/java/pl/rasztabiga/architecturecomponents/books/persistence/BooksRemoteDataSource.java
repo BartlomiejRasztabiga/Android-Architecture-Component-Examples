@@ -14,6 +14,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class BooksRemoteDataSource implements BooksDataSource {
 
+    private static final String TAG = "BooksRemoteDataSource";
+
     private static BooksRemoteDataSource instance;
 
     private BooksRestApi restApi;
@@ -41,7 +43,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> booksCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(callback::onBooksLoaded);
+                .subscribe(callback::onBooksLoaded, e -> callback.onDataNotAvailable());
     }
 
     @Override
@@ -56,7 +58,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> createBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 
     @Override
@@ -66,7 +68,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> updateBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 
     @Override

@@ -105,6 +105,6 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> deleteBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 }

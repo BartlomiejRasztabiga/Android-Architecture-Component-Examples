@@ -14,7 +14,6 @@ import pl.rasztabiga.architecturecomponents.util.EspressoIdlingResource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-// TODO Implement this class using LiveData
 public class BooksRepository implements BooksDataSource {
 
     private static volatile BooksRepository instance = null;
@@ -99,6 +98,7 @@ public class BooksRepository implements BooksDataSource {
 
     @Override
     public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
+        callback.onDataNotAvailable();
         checkNotNull(book);
         EspressoIdlingResource.increment(); // App is busy until further notice
 
@@ -134,9 +134,6 @@ public class BooksRepository implements BooksDataSource {
                 callback.onDataNotAvailable(); // Local is not available, something is wrong
             }
         });
-
-
-
     }
 
     @Override

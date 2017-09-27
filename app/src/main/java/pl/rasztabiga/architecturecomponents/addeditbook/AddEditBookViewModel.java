@@ -121,6 +121,7 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
 
             @Override
             public void onDataNotAvailable() {
+                getSnackbarMessage().setValue(R.string.error_save_book);
             }
         });
     }

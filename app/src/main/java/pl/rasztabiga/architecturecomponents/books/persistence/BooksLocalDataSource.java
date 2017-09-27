@@ -79,7 +79,7 @@ public class BooksLocalDataSource implements BooksDataSource {
     public void completeBook(@NonNull Book book) {
         checkNotNull(book);
         Observable.fromCallable(() -> {
-            mBooksDao.updateBookWithCompleted(book.getId(), true);
+            mBooksDao.updateBookWithCompleted(book.getId(), book.isCompleted());
             return Observable.empty();
         })
                 .subscribeOn(Schedulers.io())

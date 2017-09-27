@@ -58,7 +58,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
     public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
         Call<Book> createBookCall = restApi.createBook(book);
 
-        Observable.fromCallable(() -> createBookCall.execute().body())
+        Observable.fromCallable(() -> createBookCall.execute().body().getId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(callback::onBookSaved, e -> callback.onDataNotAvailable());

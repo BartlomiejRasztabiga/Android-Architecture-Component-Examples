@@ -57,13 +57,10 @@ public class BooksLocalDataSource implements BooksDataSource {
     @Override
     public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
         checkNotNull(book);
-        Observable.fromCallable(() -> {
-            mBooksDao.insertBook(book);
-            return Observable.empty();
-        })
+        Observable.fromCallable(() -> mBooksDao.insertBook(book))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(e -> callback.onBookSaved(book), f -> callback.onDataNotAvailable());
+                .subscribe(callback::onBookSaved, f -> callback.onDataNotAvailable());
     }
 
     @Override

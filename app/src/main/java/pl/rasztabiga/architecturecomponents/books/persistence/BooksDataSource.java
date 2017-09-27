@@ -22,7 +22,7 @@ public interface BooksDataSource {
 
     interface SaveBookCallback {
 
-        void onBookSaved(Book book);
+        void onBookSaved(Long bookId);
 
         void onDataNotAvailable();
     }

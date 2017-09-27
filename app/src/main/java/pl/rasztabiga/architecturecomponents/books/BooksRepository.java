@@ -93,9 +93,17 @@ public class BooksRepository implements BooksDataSource {
         // TODO Synchronize local with remote
         mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
             @Override
-            public void onBookSaved(Book book) {
+            public void onBookSaved(Long bookId) {
+                book.setId(bookId); //Update entity with newly generated ID
                 Log.d("BooksRepository", "Saved book to local " + book.toString());
-                callback.onBookSaved(book);
+
+                // Do in memory cache update to keep the app UI up to date
+                if (mCachedBooks == null) {
+                    mCachedBooks = new LinkedHashMap<>();
+                }
+                mCachedBooks.put(book.getId(), book);
+
+                callback.onBookSaved(bookId);
             }
 
             @Override
@@ -105,7 +113,7 @@ public class BooksRepository implements BooksDataSource {
         });
         mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
             @Override
-            public void onBookSaved(Book book) {
+            public void onBookSaved(Long bookId) {
                 Log.d("BooksRepository", "Saved book to remote " + book.toString());
                 //callback.onBookSaved(book);
             }
@@ -113,15 +121,10 @@ public class BooksRepository implements BooksDataSource {
             @Override
             public void onDataNotAvailable() {
                 Log.d("BooksRepository", "Remote: onDataNotAvailable()");
-                //callback.onDataNotAvailable();
+                callback.onDataNotAvailable();
             }
         });
 
-        // Do in memory cache update to keep the app UI up to date
-        if (mCachedBooks == null) {
-            mCachedBooks = new LinkedHashMap<>();
-        }
-        mCachedBooks.put(book.getId(), book);
     }
 
     @Override
@@ -281,7 +284,7 @@ public class BooksRepository implements BooksDataSource {
         for (Book book : books) {
             mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
                 @Override
-                public void onBookSaved(Book book) {
+                public void onBookSaved(Long bookId) {
 
                 }
 

@@ -18,7 +18,7 @@ public interface BooksDao {
     Book getBookById(Long bookId);
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    void insertBook(Book book);
+    Long insertBook(Book book);
 
     @Update
     int updateBook(Book book);

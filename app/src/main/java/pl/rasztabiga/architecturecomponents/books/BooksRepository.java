@@ -2,7 +2,6 @@ package pl.rasztabiga.architecturecomponents.books;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -63,25 +62,38 @@ public class BooksRepository implements BooksDataSource {
 
         EspressoIdlingResource.increment(); // App is busy until further notice
 
-        if (mCacheIsDirty) {
-            // If the cache is dirty we need to fetch new data from the network.
-            getBooksFromRemoteDataSource(callback);
-        } else {
-            // Query the local storage if available. If not, query the network.
-            mBooksLocalDataSource.getBooks(new LoadBooksCallback() {
-                @Override
-                public void onBooksLoaded(List<Book> books) {
-                    refreshCache(books);
+        // Query the local storage if available. If not, query the network.
+        mBooksLocalDataSource.getBooks(new LoadBooksCallback() {
+            @Override
+            public void onBooksLoaded(List<Book> books) {
+                refreshCache(books);
 
-                    EspressoIdlingResource.decrement(); // Set app as idle.
-                    callback.onBooksLoaded(new ArrayList<>(mCachedBooks.values()));
-                }
+                EspressoIdlingResource.decrement(); // Set app as idle.
+                callback.onBooksLoaded(new ArrayList<>(mCachedBooks.values()));
+            }
 
-                @Override
-                public void onDataNotAvailable() {
-                    getBooksFromRemoteDataSource(callback);
-                }
-            });
+            @Override
+            public void onDataNotAvailable() {
+                getBooksFromRemoteDataSource(callback);
+            }
+        });
+
+        // If user refreshed manually, synchronise with remote
+        if (mCacheIsDirty && mCachedBooks != null) {
+            mBooksRemoteDataSource.deleteAllBooks();
+            for (Book book : mCachedBooks.values()) {
+
+                // TODO Replace with saveAll then
+                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
+                    @Override
+                    public void onBookSaved(Long bookId) {}
+
+                    @Override
+                    public void onDataNotAvailable() {
+                        callback.onDataNotAvailable();
+                    }
+                });
+            }
         }
     }
 
@@ -90,18 +102,29 @@ public class BooksRepository implements BooksDataSource {
         checkNotNull(book);
         EspressoIdlingResource.increment(); // App is busy until further notice
 
-        // TODO Synchronize local with remote
         mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
             @Override
             public void onBookSaved(Long bookId) {
                 book.setId(bookId); //Update entity with newly generated ID
-                Log.d("BooksRepository", "Saved book to local " + book.toString());
 
                 // Do in memory cache update to keep the app UI up to date
                 if (mCachedBooks == null) {
                     mCachedBooks = new LinkedHashMap<>();
                 }
                 mCachedBooks.put(book.getId(), book);
+
+                // Save entity to remote
+                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
+                    @Override
+                    public void onBookSaved(Long bookId) {
+
+                    }
+
+                    @Override
+                    public void onDataNotAvailable() {
+
+                    }
+                });
 
                 callback.onBookSaved(bookId);
             }
@@ -111,19 +134,8 @@ public class BooksRepository implements BooksDataSource {
                 callback.onDataNotAvailable(); // Local is not available, something is wrong
             }
         });
-        mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
-            @Override
-            public void onBookSaved(Long bookId) {
-                Log.d("BooksRepository", "Saved book to remote " + book.toString());
-                //callback.onBookSaved(book);
-            }
 
-            @Override
-            public void onDataNotAvailable() {
-                Log.d("BooksRepository", "Remote: onDataNotAvailable()");
-                callback.onDataNotAvailable();
-            }
-        });
+
 
     }
 
@@ -176,8 +188,6 @@ public class BooksRepository implements BooksDataSource {
         }
 
         EspressoIdlingResource.increment(); // App is busy until further notice
-
-        // Load from server/persisted if needed.
 
         // Is the task in the local data source? If not, query the network.
         mBooksLocalDataSource.getBook(bookId, new GetBookCallback() {
@@ -278,7 +288,6 @@ public class BooksRepository implements BooksDataSource {
         mCacheIsDirty = false;
     }
 
-    // TODO Add refreshRemoteDataSource
     private void refreshLocalDataSource(List<Book> books) {
         mBooksLocalDataSource.deleteAllBooks();
         for (Book book : books) {
@@ -294,15 +303,6 @@ public class BooksRepository implements BooksDataSource {
                 }
 
             });
-        }
-    }
-
-    private void refreshRemoteDataSource(List<Book> books) {
-        // Dumb synchronization, delete one by one from remote (cannot deleteAll)
-        // TODO Implement smart synchronization on production API
-
-        for (Book bookToDelete : mCachedBooks.values()) {
-
         }
     }
 

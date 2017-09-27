@@ -297,6 +297,15 @@ public class BooksRepository implements BooksDataSource {
         }
     }
 
+    private void refreshRemoteDataSource(List<Book> books) {
+        // Dumb synchronization, delete one by one from remote (cannot deleteAll)
+        // TODO Implement smart synchronization on production API
+
+        for (Book bookToDelete : mCachedBooks.values()) {
+
+        }
+    }
+
     @Nullable
     private Book getBookWithId(@NonNull Long id) {
         checkNotNull(id);

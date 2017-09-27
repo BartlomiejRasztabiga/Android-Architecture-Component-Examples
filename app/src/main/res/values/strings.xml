@@ -18,4 +18,5 @@
     <string name="no_data">No data</string>
 
     <string name="no_internet">No internet connection</string>
+    <string name="save_book_error">Error while saving book</string>
 </resources>

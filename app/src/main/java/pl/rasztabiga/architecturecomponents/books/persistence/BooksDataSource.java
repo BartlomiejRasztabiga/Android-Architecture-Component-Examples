@@ -20,11 +20,18 @@ public interface BooksDataSource {
         void onDataNotAvailable();
     }
 
+    interface SaveBookCallback {
+
+        void onBookSaved(Book book);
+
+        void onDataNotAvailable();
+    }
+
     void getBooks(@NonNull LoadBooksCallback callback);
 
     void getBook(@NonNull Long bookId, @NonNull GetBookCallback callback);
 
-    void saveBook(@NonNull Book book);
+    void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback);
 
     void updateBook(@NonNull Book book);
 

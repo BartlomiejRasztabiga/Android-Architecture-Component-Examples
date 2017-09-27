@@ -5,6 +5,8 @@ import android.arch.lifecycle.AndroidViewModel;
 import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
 import android.support.annotation.Nullable;
+import android.util.Log;
+import android.widget.Toast;
 
 import pl.rasztabiga.architecturecomponents.R;
 import pl.rasztabiga.architecturecomponents.SingleLiveEvent;
@@ -94,7 +96,6 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
             saveBook(book);
         }
 
-
     }
 
     SnackbarMessage getSnackbarMessage() {
@@ -114,8 +115,19 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
     }
 
     private void saveBook(Book book) {
-        mBooksRepository.saveBook(book);
-        mBookUpdated.call();
+        mBooksRepository.saveBook(book, new BooksDataSource.SaveBookCallback() {
+            @Override
+            public void onBookSaved(Book book) {
+                Log.d("AddEditBookViewModel", book.toString());
+                mBookUpdated.call();
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+                //mSnackbarText.setValue(R.string.save_book_error);
+                Toast.makeText(getApplication().getApplicationContext(), "Saving book error", Toast.LENGTH_LONG).show();
+            }
+        });
 
         // Refresh to keep data consistent
         mBooksRepository.refreshBooks();

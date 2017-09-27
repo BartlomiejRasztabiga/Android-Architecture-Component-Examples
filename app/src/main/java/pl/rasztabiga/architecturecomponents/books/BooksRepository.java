@@ -2,6 +2,7 @@ package pl.rasztabiga.architecturecomponents.books;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -85,10 +86,36 @@ public class BooksRepository implements BooksDataSource {
     }
 
     @Override
-    public void saveBook(@NonNull Book book) {
+    public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
         checkNotNull(book);
-        mBooksRemoteDataSource.saveBook(book);
-        mBooksLocalDataSource.saveBook(book);
+        EspressoIdlingResource.increment(); // App is busy until further notice
+
+        // TODO Synchronize local with remote
+        mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
+            @Override
+            public void onBookSaved(Book book) {
+                Log.d("BooksRepository", "Saved book to local " + book.toString());
+                callback.onBookSaved(book);
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+                callback.onDataNotAvailable(); // Local is not available, something is wrong
+            }
+        });
+        mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
+            @Override
+            public void onBookSaved(Book book) {
+                Log.d("BooksRepository", "Saved book to remote " + book.toString());
+                //callback.onBookSaved(book);
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+                Log.d("BooksRepository", "Remote: onDataNotAvailable()");
+                //callback.onDataNotAvailable();
+            }
+        });
 
         // Do in memory cache update to keep the app UI up to date
         if (mCachedBooks == null) {
@@ -248,10 +275,22 @@ public class BooksRepository implements BooksDataSource {
         mCacheIsDirty = false;
     }
 
+    // TODO Add refreshRemoteDataSource
     private void refreshLocalDataSource(List<Book> books) {
         mBooksLocalDataSource.deleteAllBooks();
         for (Book book : books) {
-            mBooksLocalDataSource.saveBook(book);
+            mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
+                @Override
+                public void onBookSaved(Book book) {
+
+                }
+
+                @Override
+                public void onDataNotAvailable() {
+
+                }
+
+            });
         }
     }
 

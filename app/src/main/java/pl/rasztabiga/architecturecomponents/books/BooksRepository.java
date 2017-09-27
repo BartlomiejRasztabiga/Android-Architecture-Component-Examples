@@ -85,7 +85,9 @@ public class BooksRepository implements BooksDataSource {
                 // TODO Replace with saveAll then
                 mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
                     @Override
-                    public void onBookSaved(Long bookId) {}
+                    public void onBookSaved(Long bookId) {
+                        //ignore
+                    }
 
                     @Override
                     public void onDataNotAvailable() {
@@ -117,12 +119,12 @@ public class BooksRepository implements BooksDataSource {
                 mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
                     @Override
                     public void onBookSaved(Long bookId) {
-
+                        // ignore
                     }
 
                     @Override
                     public void onDataNotAvailable() {
-
+                        // ignore
                     }
                 });
 
@@ -291,12 +293,12 @@ public class BooksRepository implements BooksDataSource {
             mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
                 @Override
                 public void onBookSaved(Long bookId) {
-
+                    // ignore
                 }
 
                 @Override
                 public void onDataNotAvailable() {
-
+                    // ignore
                 }
 
             });

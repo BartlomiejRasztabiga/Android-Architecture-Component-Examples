@@ -10,7 +10,6 @@ import android.support.annotation.Nullable;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
-//TODO Add lombok
 @Entity(tableName = "books")
 public final class Book {
 

@@ -93,8 +93,6 @@ public class BooksRemoteDataSource implements BooksDataSource {
 
     @Override
     public void deleteAllBooks() {
-        // throw new UnsupportedOperationException();
-
         // Cannot be handled by mockapi.io
     }
 

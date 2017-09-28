@@ -14,7 +14,6 @@ import pl.rasztabiga.architecturecomponents.util.EspressoIdlingResource;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-// TODO Implement this class using LiveData
 public class BooksRepository implements BooksDataSource {
 
     private static volatile BooksRepository instance = null;
@@ -62,39 +61,81 @@ public class BooksRepository implements BooksDataSource {
 
         EspressoIdlingResource.increment(); // App is busy until further notice
 
-        if (mCacheIsDirty) {
-            // If the cache is dirty we need to fetch new data from the network.
-            getBooksFromRemoteDataSource(callback);
-        } else {
-            // Query the local storage if available. If not, query the network.
-            mBooksLocalDataSource.getBooks(new LoadBooksCallback() {
-                @Override
-                public void onBooksLoaded(List<Book> books) {
-                    refreshCache(books);
+        // Query the local storage if available. If not, query the network.
+        mBooksLocalDataSource.getBooks(new LoadBooksCallback() {
+            @Override
+            public void onBooksLoaded(List<Book> books) {
+                refreshCache(books);
 
-                    EspressoIdlingResource.decrement(); // Set app as idle.
-                    callback.onBooksLoaded(new ArrayList<>(mCachedBooks.values()));
-                }
+                EspressoIdlingResource.decrement(); // Set app as idle.
+                callback.onBooksLoaded(new ArrayList<>(mCachedBooks.values()));
+            }
 
-                @Override
-                public void onDataNotAvailable() {
-                    getBooksFromRemoteDataSource(callback);
-                }
-            });
+            @Override
+            public void onDataNotAvailable() {
+                getBooksFromRemoteDataSource(callback);
+            }
+        });
+
+        // If user refreshed manually, synchronise with remote
+        if (mCacheIsDirty && mCachedBooks != null) {
+            mBooksRemoteDataSource.deleteAllBooks();
+            for (Book book : mCachedBooks.values()) {
+
+                // TODO Replace with saveAll then
+                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
+                    @Override
+                    public void onBookSaved(Long bookId) {
+                        //ignore
+                    }
+
+                    @Override
+                    public void onDataNotAvailable() {
+                        callback.onDataNotAvailable();
+                    }
+                });
+            }
         }
     }
 
     @Override
-    public void saveBook(@NonNull Book book) {
+    public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
+        callback.onDataNotAvailable();
         checkNotNull(book);
-        mBooksRemoteDataSource.saveBook(book);
-        mBooksLocalDataSource.saveBook(book);
+        EspressoIdlingResource.increment(); // App is busy until further notice
 
-        // Do in memory cache update to keep the app UI up to date
-        if (mCachedBooks == null) {
-            mCachedBooks = new LinkedHashMap<>();
-        }
-        mCachedBooks.put(book.getId(), book);
+        mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
+            @Override
+            public void onBookSaved(Long bookId) {
+                book.setId(bookId); //Update entity with newly generated ID
+
+                // Do in memory cache update to keep the app UI up to date
+                if (mCachedBooks == null) {
+                    mCachedBooks = new LinkedHashMap<>();
+                }
+                mCachedBooks.put(book.getId(), book);
+
+                // Save entity to remote
+                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
+                    @Override
+                    public void onBookSaved(Long bookId) {
+                        // ignore
+                    }
+
+                    @Override
+                    public void onDataNotAvailable() {
+                        // ignore
+                    }
+                });
+
+                callback.onBookSaved(bookId);
+            }
+
+            @Override
+            public void onDataNotAvailable() {
+                callback.onDataNotAvailable(); // Local is not available, something is wrong
+            }
+        });
     }
 
     @Override
@@ -116,7 +157,7 @@ public class BooksRepository implements BooksDataSource {
         mBooksRemoteDataSource.completeBook(book);
         mBooksLocalDataSource.completeBook(book);
 
-        Book completedBook = new Book(book.getId(), book.getTitle(), book.getPages(), true);
+        Book completedBook = new Book(book.getId(), book.getTitle(), book.getPages(), book.isCompleted());
 
         // Do in memory cache update to keep the app UI up to date
         if (mCachedBooks == null) {
@@ -146,8 +187,6 @@ public class BooksRepository implements BooksDataSource {
         }
 
         EspressoIdlingResource.increment(); // App is busy until further notice
-
-        // Load from server/persisted if needed.
 
         // Is the task in the local data source? If not, query the network.
         mBooksLocalDataSource.getBook(bookId, new GetBookCallback() {
@@ -251,7 +290,18 @@ public class BooksRepository implements BooksDataSource {
     private void refreshLocalDataSource(List<Book> books) {
         mBooksLocalDataSource.deleteAllBooks();
         for (Book book : books) {
-            mBooksLocalDataSource.saveBook(book);
+            mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
+                @Override
+                public void onBookSaved(Long bookId) {
+                    // ignore
+                }
+
+                @Override
+                public void onDataNotAvailable() {
+                    // ignore
+                }
+
+            });
         }
     }
 

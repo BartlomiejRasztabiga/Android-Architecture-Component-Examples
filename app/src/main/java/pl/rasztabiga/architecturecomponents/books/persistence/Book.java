@@ -10,36 +10,32 @@ import android.support.annotation.Nullable;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 
-//TODO Add lombok
 @Entity(tableName = "books")
 public final class Book {
 
-    @NonNull
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "book_id")
-    private final Long id;
+    private Long id;
 
     @Nullable
     @ColumnInfo(name = "title")
-    private final String title;
+    private String title;
 
     @Nullable
     @ColumnInfo(name = "pages")
-    private final Long pages;
+    private Long pages;
 
     @ColumnInfo(name = "completed")
     private boolean completed;
 
     @Ignore
     public Book() {
-        id = 0L;
         title = "";
         pages = 0L;
     }
 
     @Ignore
     public Book(@Nullable String title, @Nullable Long pages) {
-        this.id = 0L;
         this.title = title;
         this.pages = pages;
     }
@@ -78,6 +74,10 @@ public final class Book {
     @NonNull
     public boolean isCompleted() {
         return completed;
+    }
+
+    public void setId(@NonNull Long id) {
+        this.id = id;
     }
 
     public void setCompleted(boolean completed) {

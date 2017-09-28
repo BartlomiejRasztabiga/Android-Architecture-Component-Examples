@@ -14,8 +14,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class BooksRemoteDataSource implements BooksDataSource {
 
-    private static final String TAG = "BooksRemoteDataSource";
-
     private static BooksRemoteDataSource instance;
 
     private BooksRestApi restApi;
@@ -57,13 +55,13 @@ public class BooksRemoteDataSource implements BooksDataSource {
     }
 
     @Override
-    public void saveBook(@NonNull Book book) {
+    public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
         Call<Book> createBookCall = restApi.createBook(book);
 
-        Observable.fromCallable(() -> createBookCall.execute().body())
+        Observable.fromCallable(() -> createBookCall.execute().body().getId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
+                .subscribe(callback::onBookSaved, e -> callback.onDataNotAvailable());
     }
 
     @Override
@@ -95,8 +93,6 @@ public class BooksRemoteDataSource implements BooksDataSource {
 
     @Override
     public void deleteAllBooks() {
-        // throw new UnsupportedOperationException();
-
         // Cannot be handled by mockapi.io
     }
 
@@ -107,6 +103,6 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> deleteBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 }

@@ -87,8 +87,6 @@ public class BooksActivity extends AppCompatActivity implements BooksNavigator, 
     private void setupDrawerContent(NavigationView navigationView) {
         navigationView.setNavigationItemSelectedListener(
                 menuItem -> {
-                    //TODO Change after adding more drawer items
-
                     // Close the navigation drawer when an item is selected.
                     menuItem.setChecked(true);
                     mDrawerLayout.closeDrawers();
@@ -98,8 +96,6 @@ public class BooksActivity extends AppCompatActivity implements BooksNavigator, 
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        //TODO Change after adding more menu items
-
         if (item.getItemId() == android.R.id.home) {
             // Open the navigation drawer when the home icon is selected from the toolbar.
             mDrawerLayout.openDrawer(GravityCompat.START);

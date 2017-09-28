@@ -41,22 +41,27 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> booksCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(callback::onBooksLoaded);
+                .subscribe(callback::onBooksLoaded, e -> callback.onDataNotAvailable());
     }
 
     @Override
     public void getBook(@NonNull Long bookId, @NonNull GetBookCallback callback) {
-        throw new UnsupportedOperationException();
+        Call<Book> getBookCall = restApi.getBook(bookId);
+
+        Observable.fromCallable(() -> getBookCall.execute().body())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(callback::onBookLoaded, e -> callback.onDataNotAvailable());
     }
 
     @Override
-    public void saveBook(@NonNull Book book) {
+    public void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback) {
         Call<Book> createBookCall = restApi.createBook(book);
 
-        Observable.fromCallable(() -> createBookCall.execute().body())
+        Observable.fromCallable(() -> createBookCall.execute().body().getId())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(callback::onBookSaved, e -> callback.onDataNotAvailable());
     }
 
     @Override
@@ -66,7 +71,7 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> updateBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 
     @Override
@@ -88,8 +93,6 @@ public class BooksRemoteDataSource implements BooksDataSource {
 
     @Override
     public void deleteAllBooks() {
-        // throw new UnsupportedOperationException();
-
         // Cannot be handled by mockapi.io
     }
 
@@ -100,6 +103,6 @@ public class BooksRemoteDataSource implements BooksDataSource {
         Observable.fromCallable(() -> deleteBookCall.execute().body())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe();
+                .subscribe(e -> {/*ignore*/}, f -> {/*ignore*/});
     }
 }

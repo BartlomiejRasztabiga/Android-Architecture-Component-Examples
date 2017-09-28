@@ -123,7 +123,9 @@ public class BooksViewModel extends AndroidViewModel {
 
             @Override
             public void onDataNotAvailable() {
+                dataLoading.set(false);
                 mIsDataLoadingError.set(true);
+                mSnackbarText.setValue(R.string.no_internet);
             }
         });
     }

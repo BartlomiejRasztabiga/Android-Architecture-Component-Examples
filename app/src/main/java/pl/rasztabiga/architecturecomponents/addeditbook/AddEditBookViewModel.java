@@ -94,7 +94,6 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
             saveBook(book);
         }
 
-
     }
 
     SnackbarMessage getSnackbarMessage() {
@@ -114,10 +113,16 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
     }
 
     private void saveBook(Book book) {
-        mBooksRepository.saveBook(book);
-        mBookUpdated.call();
+        mBooksRepository.saveBook(book, new BooksDataSource.SaveBookCallback() {
+            @Override
+            public void onBookSaved(Long bookId) {
+                mBookUpdated.call();
+            }
 
-        // Refresh to keep data consistent
-        mBooksRepository.refreshBooks();
+            @Override
+            public void onDataNotAvailable() {
+                getSnackbarMessage().setValue(R.string.error_save_book);
+            }
+        });
     }
 }

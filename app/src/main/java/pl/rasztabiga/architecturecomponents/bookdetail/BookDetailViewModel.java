@@ -63,10 +63,9 @@ public class BookDetailViewModel extends AndroidViewModel implements BooksDataSo
         }
         Book bookToComplete = this.book.get();
         bookToComplete.setCompleted(completed);
-        if (completed) {
-            mBooksRepository.completeBook(bookToComplete);
-            showSnackbarMessage(R.string.book_marked_complete);
-        }
+
+        mBooksRepository.completeBook(bookToComplete);
+        showSnackbarMessage(R.string.book_updated);
     }
 
     public void start(Long bookId) {

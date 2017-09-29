@@ -22,9 +22,9 @@ public interface BooksDataSource {
 
     interface SaveBookCallback {
 
-        void onBookSaved(Long bookId);
+        default void onBookSaved(Long bookId) {}
 
-        void onDataNotAvailable();
+        default void onDataNotAvailable() {}
     }
 
     void getBooks(@NonNull LoadBooksCallback callback);
@@ -32,6 +32,8 @@ public interface BooksDataSource {
     void getBook(@NonNull Long bookId, @NonNull GetBookCallback callback);
 
     void saveBook(@NonNull Book book, @NonNull SaveBookCallback callback);
+
+    void saveBook(@NonNull Book book);
 
     void updateBook(@NonNull Book book);
 

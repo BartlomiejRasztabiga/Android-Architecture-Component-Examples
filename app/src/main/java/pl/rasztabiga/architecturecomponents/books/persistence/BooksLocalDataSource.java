@@ -64,6 +64,11 @@ public class BooksLocalDataSource implements BooksDataSource {
     }
 
     @Override
+    public void saveBook(@NonNull Book book) {
+        saveBook(book, new SaveBookCallback() {});
+    }
+
+    @Override
     public void updateBook(@NonNull Book book) {
         checkNotNull(book);
         Observable.fromCallable(() -> {

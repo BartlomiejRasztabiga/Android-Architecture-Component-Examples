@@ -57,6 +57,9 @@ public class BooksRepositoryTest {
     private BooksDataSource.LoadBooksCallback mLoadBooksCallback;
 
     @Mock
+    private BooksDataSource.SaveBookCallback mSaveBooksCallback;
+
+    @Mock
     private Context mContext;
 
     @Captor

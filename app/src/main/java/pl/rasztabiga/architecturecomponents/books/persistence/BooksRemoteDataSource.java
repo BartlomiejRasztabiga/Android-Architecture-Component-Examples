@@ -65,6 +65,11 @@ public class BooksRemoteDataSource implements BooksDataSource {
     }
 
     @Override
+    public void saveBook(@NonNull Book book) {
+        saveBook(book, new SaveBookCallback() {});
+    }
+
+    @Override
     public void updateBook(@NonNull Book book) {
         Call<Book> updateBookCall = restApi.updateBook(book.getId(), book);
 

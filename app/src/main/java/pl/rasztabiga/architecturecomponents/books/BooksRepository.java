@@ -83,17 +83,7 @@ public class BooksRepository implements BooksDataSource {
             for (Book book : mCachedBooks.values()) {
 
                 // TODO Replace with saveAll then
-                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
-                    @Override
-                    public void onBookSaved(Long bookId) {
-                        //ignore
-                    }
-
-                    @Override
-                    public void onDataNotAvailable() {
-                        callback.onDataNotAvailable();
-                    }
-                });
+                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {});
             }
         }
     }
@@ -116,17 +106,7 @@ public class BooksRepository implements BooksDataSource {
                 mCachedBooks.put(book.getId(), book);
 
                 // Save entity to remote
-                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {
-                    @Override
-                    public void onBookSaved(Long bookId) {
-                        // ignore
-                    }
-
-                    @Override
-                    public void onDataNotAvailable() {
-                        // ignore
-                    }
-                });
+                mBooksRemoteDataSource.saveBook(book, new SaveBookCallback() {});
 
                 callback.onBookSaved(bookId);
             }
@@ -136,6 +116,11 @@ public class BooksRepository implements BooksDataSource {
                 callback.onDataNotAvailable(); // Local is not available, something is wrong
             }
         });
+    }
+
+    @Override
+    public void saveBook(@NonNull Book book) {
+        saveBook(book, new SaveBookCallback() {});
     }
 
     @Override
@@ -157,7 +142,7 @@ public class BooksRepository implements BooksDataSource {
         mBooksRemoteDataSource.completeBook(book);
         mBooksLocalDataSource.completeBook(book);
 
-        Book completedBook = new Book(book.getId(), book.getTitle(), book.getPages(), book.isCompleted());
+        Book completedBook = new Book(book.getId(), book.getTitle(), book.getPages(),true);
 
         // Do in memory cache update to keep the app UI up to date
         if (mCachedBooks == null) {
@@ -290,18 +275,7 @@ public class BooksRepository implements BooksDataSource {
     private void refreshLocalDataSource(List<Book> books) {
         mBooksLocalDataSource.deleteAllBooks();
         for (Book book : books) {
-            mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {
-                @Override
-                public void onBookSaved(Long bookId) {
-                    // ignore
-                }
-
-                @Override
-                public void onDataNotAvailable() {
-                    // ignore
-                }
-
-            });
+            mBooksLocalDataSource.saveBook(book, new SaveBookCallback() {});
         }
     }
 

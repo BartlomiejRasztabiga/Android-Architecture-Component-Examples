@@ -71,7 +71,6 @@ public final class Book {
         return pages;
     }
 
-    @NonNull
     public boolean isCompleted() {
         return completed;
     }
@@ -79,6 +78,8 @@ public final class Book {
     public void setId(@NonNull Long id) {
         this.id = id;
     }
+
+    public boolean isActive() { return !isCompleted();}
 
     public void setCompleted(boolean completed) {
         this.completed = completed;

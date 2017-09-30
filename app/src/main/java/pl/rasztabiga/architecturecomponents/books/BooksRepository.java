@@ -142,7 +142,7 @@ public class BooksRepository implements BooksDataSource {
         mBooksRemoteDataSource.completeBook(book);
         mBooksLocalDataSource.completeBook(book);
 
-        Book completedBook = new Book(book.getId(), book.getTitle(), book.getPages(), book.isCompleted());
+        Book completedBook = new Book(book.getId(), book.getTitle(), book.getPages(),true);
 
         // Do in memory cache update to keep the app UI up to date
         if (mCachedBooks == null) {

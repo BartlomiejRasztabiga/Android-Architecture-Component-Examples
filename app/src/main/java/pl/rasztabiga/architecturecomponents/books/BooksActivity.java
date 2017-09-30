@@ -46,7 +46,7 @@ public class BooksActivity extends AppCompatActivity implements BooksNavigator, 
         });
 
         // Subscribe to "new task" event
-        mViewModel.getNewTaskEvent().observe(this, e -> addNewBook());
+        mViewModel.getNewBookEvent().observe(this, e -> addNewBook());
     }
 
     public static BooksViewModel obtainViewModel(FragmentActivity activity) {

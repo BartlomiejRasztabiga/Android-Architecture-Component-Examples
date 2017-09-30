@@ -65,13 +65,6 @@ public class AddEditBookViewModelTest {
 
     private void setupContext() {
         when(mContext.getApplicationContext()).thenReturn(mContext);
-        when(mContext.getString(R.string.successfully_saved_book_message))
-                .thenReturn("EDIT_RESULT_OK");
-        when(mContext.getString(R.string.successfully_added_book_message))
-                .thenReturn("ADD_EDIT_RESULT_OK");
-        when(mContext.getString(R.string.successfully_deleted_book_message))
-                .thenReturn("DELETE_RESULT_OK");
-
         when(mContext.getResources()).thenReturn(mock(Resources.class));
     }
 

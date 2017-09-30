@@ -5,6 +5,7 @@ import android.arch.lifecycle.AndroidViewModel;
 import android.databinding.ObservableBoolean;
 import android.databinding.ObservableField;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import pl.rasztabiga.architecturecomponents.R;
 import pl.rasztabiga.architecturecomponents.SingleLiveEvent;
@@ -21,7 +22,8 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
 
     public final ObservableBoolean dataLoading = new ObservableBoolean(false);
 
-    private final SnackbarMessage mSnackbarText = new SnackbarMessage();
+    @VisibleForTesting
+    final SnackbarMessage mSnackbarText = new SnackbarMessage();
 
     private final SingleLiveEvent<Void> mBookUpdated = new SingleLiveEvent<>();
 
@@ -30,11 +32,14 @@ public class AddEditBookViewModel extends AndroidViewModel implements BooksDataS
     @Nullable
     private Long mBookId;
 
-    private boolean mIsNewBook;
+    @VisibleForTesting
+    boolean mIsNewBook;
 
-    private boolean mIsDataLoaded = false;
+    @VisibleForTesting
+    boolean mIsDataLoaded = false;
 
-    private boolean mBookCompleted = false;
+    @VisibleForTesting
+    boolean mBookCompleted = false;
 
     public AddEditBookViewModel(Application context,
                                 BooksRepository booksRepository) {

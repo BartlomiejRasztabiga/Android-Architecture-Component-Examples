@@ -23,6 +23,7 @@ import pl.rasztabiga.architecturecomponents.books.persistence.BooksRemoteDataSou
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -68,6 +69,9 @@ public class BooksRepositoryTest {
     @Captor
     private ArgumentCaptor<BooksDataSource.LoadBooksCallback> mBooksCallbackCaptor;
 
+    @Captor
+    private ArgumentCaptor<BooksDataSource.SaveBookCallback> mSaveBookCallbackCaptor;
+
     @Before
     public void setupBooksRepository() {
         MockitoAnnotations.initMocks(this);
@@ -82,35 +86,92 @@ public class BooksRepositoryTest {
     }
 
     @Test
-    public void getBooks_repositoryCachesAfterFirstApiCall() {
-
+    public void whenGetBooks_thenRepositoryCachesAfterFirstCall() {
         twoBooksLoadCallsToRepository(mLoadBooksCallback);
 
-        verify(mBooksRemoteDataSource).getBooks(any(BooksDataSource.LoadBooksCallback.class));
+        verify(mBooksLocalDataSource, times(1)).getBooks(any(BooksDataSource.LoadBooksCallback.class));
+        verify(mBooksRemoteDataSource, never()).getBooks(any(BooksDataSource.LoadBooksCallback.class));
     }
 
     @Test
-    public void getBooks_requestsAllBooksFromLocalDataSource() {
+    public void whenGetBooks_thenRequestsAllBooksFromLocalDataSource() {
         mBooksRepository.getBooks(mLoadBooksCallback);
 
         verify(mBooksLocalDataSource).getBooks(any(BooksDataSource.LoadBooksCallback.class));
     }
 
     @Test
-    public void saveBooks_savesBooksToServiceAPI() {
-        Book newBook = new Book(BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
+    public void givenLocalNotAvailable_whenGetBooks_thenRequestsBooksFromRemoteDataSource() {
+        mBooksRepository.getBooks(mLoadBooksCallback);
 
-        mBooksRepository.saveBook(newBook);
+        setBooksNotAvailable(mBooksLocalDataSource);
 
-        verify(mBooksRemoteDataSource).saveBook(newBook);
-        verify(mBooksLocalDataSource).saveBook(newBook);
+        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
 
-        assertThat(mBooksRepository.mCachedBooks.size()).isEqualTo(1);
-
+        verify(mBooksRemoteDataSource).getBooks(any(BooksDataSource.LoadBooksCallback.class));
     }
 
     @Test
-    public void completeBook_activatesBookToServiceAPIUpdatesCache() {
+    public void givenUserRefresh_whenGetBooks_thenTriggersSynchroniseWithRemote() {
+        // First call to cache books
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        verify(mBooksLocalDataSource).getBooks(mBooksCallbackCaptor.capture());
+
+        mBooksCallbackCaptor.getValue().onBooksLoaded(BOOKS);
+
+        // Second call to trigger synchronise
+        mBooksRepository.refreshBooks();
+
+        mBooksRepository.getBooks(mLoadBooksCallback);
+
+        // triggers synchronise
+        verify(mBooksRemoteDataSource).deleteAllBooks();
+        verify(mBooksRemoteDataSource, atLeastOnce()).saveBook(any(Book.class),
+                any(BooksDataSource.SaveBookCallback.class));
+    }
+
+    @Test
+    public void givenNewBook_whenSaveBook_thenSavesBooksToLocalDatabaseAndRemote() {
+        Book newBook = new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
+
+        mBooksRepository.saveBook(newBook);
+
+        verify(mBooksLocalDataSource).saveBook(eq(newBook), mSaveBookCallbackCaptor.capture());
+
+        mSaveBookCallbackCaptor.getValue().onBookSaved(BOOK_ID1);
+
+        assertThat(mBooksRepository.mCachedBooks.size()).isEqualTo(1);
+
+        verify(mBooksRemoteDataSource).saveBook(eq(newBook), mSaveBookCallbackCaptor.capture());
+    }
+
+    @Test
+    public void givenLocalNotAvailable_whenSaveBook_thenTriggersOnDataNotAvailable() {
+        Book newBook = new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
+
+        mBooksRepository.saveBook(newBook);
+
+        verify(mBooksLocalDataSource).saveBook(eq(newBook), mSaveBookCallbackCaptor.capture());
+
+        mSaveBookCallbackCaptor.getValue().onDataNotAvailable();
+    }
+
+    @Test
+    public void whenUpdateBook_thenActivatesLocalAndRemoteAndUpdatesCache() {
+        Book updatedBook = new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1, true);
+        mBooksRepository.saveBook(updatedBook);
+
+        mBooksRepository.updateBook(updatedBook);
+
+        verify(mBooksRemoteDataSource).updateBook(updatedBook);
+        verify(mBooksLocalDataSource).updateBook(updatedBook);
+        assertThat(mBooksRepository.mCachedBooks.size()).isEqualTo(1);
+        assertThat(mBooksRepository.mCachedBooks.get(updatedBook.getId()).isActive()).isFalse();
+    }
+
+    @Test
+    public void whenCompleteBook_thenActivatesLocalAndRemoteAndUpdatesCache() {
         Book newBook = new Book(BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
         mBooksRepository.saveBook(newBook);
 
@@ -123,9 +184,13 @@ public class BooksRepositoryTest {
     }
 
     @Test
-    public void completeBookId_activatesBookToServiceAPIUpdatesCache() {
-        Book newBook = new Book(BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
+    public void whenCompleteBookWithId_thenActivatesLocalAndRemoteAndUpdatesCache() {
+        Book newBook = new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
         mBooksRepository.saveBook(newBook);
+
+        // Add new book to cache
+        verify(mBooksLocalDataSource).saveBook(eq(newBook), mSaveBookCallbackCaptor.capture());
+        mSaveBookCallbackCaptor.getValue().onBookSaved(BOOK_ID1);
 
         mBooksRepository.completeBook(newBook.getId());
 
@@ -136,15 +201,50 @@ public class BooksRepositoryTest {
     }
 
     @Test
-    public void getBook_requestsSingleBookFromLocalDataSource() {
+    public void whenGetBook_thenRequestsSingleBookFromLocalDataSource() {
         mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
 
-        verify(mBooksLocalDataSource).getBook(eq(BOOK_ID1),
-                any(BooksDataSource.GetBookCallback.class));
+        verify(mBooksLocalDataSource).getBook(eq(BOOK_ID1), mBookCallbackCaptor.capture());
+        mBookCallbackCaptor.getValue().onBookLoaded(BOOKS.get(0));
     }
 
     @Test
-    public void deleteAllBooks_deleteBooksToServiceAPIUpdatesCache(){
+    public void givenCachedBook_whenGetThisBook_thenRespondsWithCache() {
+        Book newBook = new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
+        mBooksRepository.saveBook(newBook);
+
+        // Add new book to cache
+        verify(mBooksLocalDataSource).saveBook(eq(newBook), mSaveBookCallbackCaptor.capture());
+        mSaveBookCallbackCaptor.getValue().onBookSaved(BOOK_ID1);
+
+        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
+
+        verify(mBooksLocalDataSource, never()).getBook(BOOK_ID1, mGetBookCallback);
+        verify(mBooksRemoteDataSource, never()).getBook(BOOK_ID1, mGetBookCallback);
+    }
+
+    @Test
+    public void givenLocalUnavailable_whenGetBook_thenRequestsBookFromRemote() {
+        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
+
+        setBookNotAvailable(mBooksLocalDataSource, BOOK_ID1);
+        setBookAvailable(mBooksRemoteDataSource, BOOKS.get(0));
+
+        verify(mBooksRemoteDataSource).getBook(eq(BOOK_ID1), mBookCallbackCaptor.capture());
+    }
+
+    @Test
+    public void givenLocalAndRemoteUnavailable_whenGetBook_thenTriggersOnDataNotAvailable() {
+        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
+
+        setBookNotAvailable(mBooksLocalDataSource, BOOK_ID1);
+        setBookNotAvailable(mBooksRemoteDataSource, BOOK_ID1);
+
+        verify(mGetBookCallback).onDataNotAvailable();
+    }
+
+    @Test
+    public void whenDeleteAllBooks_thenDeleteBooksInLocalAndRemoteAndUpdatesCache(){
         Book newBook1 = new Book(BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
         mBooksRepository.saveBook(newBook1);
         Book newBook2 = new Book(BOOK_ID1, BOOK_TITLE2, BOOK_NUMBER_OF_PAGES2);
@@ -161,9 +261,14 @@ public class BooksRepositoryTest {
     }
 
     @Test
-    public void deleteBook_deleteBookToServiceAPIRemovedFromCache(){
-        Book newBook = new Book(BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
+    public void whenDeleteBook_thenDeleteInLocalAndRemoteAndRemovesFromCache() {
+        Book newBook = new Book(BOOK_ID1, BOOK_TITLE1, BOOK_NUMBER_OF_PAGES1);
         mBooksRepository.saveBook(newBook);
+
+        // Add new book to cache
+        verify(mBooksLocalDataSource).saveBook(eq(newBook), mSaveBookCallbackCaptor.capture());
+        mSaveBookCallbackCaptor.getValue().onBookSaved(BOOK_ID1);
+
         assertThat(mBooksRepository.mCachedBooks.containsKey(newBook.getId())).isTrue();
 
         mBooksRepository.deleteBook(newBook.getId());
@@ -172,17 +277,6 @@ public class BooksRepositoryTest {
         verify(mBooksRemoteDataSource).deleteBook(newBook.getId());
 
         assertThat(mBooksRepository.mCachedBooks.containsKey(newBook.getId())).isFalse();
-    }
-
-    @Test
-    public void getBooksWithDirtyCache_booksAreRetrievedFromRemote(){
-        mBooksRepository.refreshBooks();
-        mBooksRepository.getBooks(mLoadBooksCallback);
-
-        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
-
-        verify(mBooksLocalDataSource, never()).getBooks(mLoadBooksCallback);
-        verify(mLoadBooksCallback).onBooksLoaded(BOOKS);
     }
 
     @Test
@@ -216,23 +310,6 @@ public class BooksRepositoryTest {
         setBooksNotAvailable(mBooksRemoteDataSource);
 
         verify(mLoadBooksCallback).onDataNotAvailable();
-    }
-
-    @Test
-    public void getBookWithAvailableCache_bookIsRetrievedOnlyFromCache() {
-        // First call to cache data
-        mBooksRepository.refreshBooks();
-        mBooksRepository.getBooks(mLoadBooksCallback);
-
-        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
-
-        // Second call to verify cache availability
-        mBooksRepository.getBook(BOOK_ID1, mGetBookCallback);
-
-        verify(mBooksLocalDataSource, never()).getBook(BOOK_ID1, mGetBookCallback);
-        verify(mBooksRemoteDataSource, never()).getBook(BOOK_ID1, mGetBookCallback);
-
-        verify(mGetBookCallback).onBookLoaded(BOOKS.get(0));
     }
 
     @Test
@@ -283,43 +360,16 @@ public class BooksRepositoryTest {
         verify(mGetBookCallback).onDataNotAvailable();
     }
 
-
-    @Test
-    public void getBooks_refreshesLocalDataSource(){
-
-        mBooksRepository.refreshBooks();
-
-        mBooksRepository.getBooks(mLoadBooksCallback);
-
-        setBooksAvailable(mBooksRemoteDataSource, BOOKS);
-
-        verify(mBooksLocalDataSource, times(BOOKS.size())).saveBook(any(Book.class));
-
-    }
-    @Test
-    public void updateBook_updatesCachedBook(){
-        Book newBook = new Book(1L, "Book1", 100L);
-
-        mBooksRepository.updateBook(newBook);
-
-        verify(mBooksLocalDataSource).updateBook(newBook);
-        verify(mBooksRemoteDataSource).updateBook(newBook);
-
-        assertThat(mBooksRepository.mCachedBooks.size()).isEqualTo(1);
-    }
-
     private void twoBooksLoadCallsToRepository(BooksDataSource.LoadBooksCallback callback) {
 
+        // First call to cache books
         mBooksRepository.getBooks(callback);
 
         verify(mBooksLocalDataSource).getBooks(mBooksCallbackCaptor.capture());
 
-        mBooksCallbackCaptor.getValue().onDataNotAvailable();
-
-        verify(mBooksRemoteDataSource).getBooks(mBooksCallbackCaptor.capture());
-
         mBooksCallbackCaptor.getValue().onBooksLoaded(BOOKS);
 
+        // Second call to verify that books were retrieved from cache
         mBooksRepository.getBooks(callback);
     }
 

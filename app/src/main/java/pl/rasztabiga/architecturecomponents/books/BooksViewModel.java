@@ -67,7 +67,7 @@ public class BooksViewModel extends AndroidViewModel {
         return mOpenBookEvent;
     }
 
-    SingleLiveEvent<Void> getNewTaskEvent() {
+    SingleLiveEvent<Void> getNewBookEvent() {
         return mNewBookEvent;
     }
 
